@@ -1,4 +1,5 @@
 import { Component } from "react";
+import fetchImages from "./Services/fetchImages";
 import Searchbar from "./Components/Searchbar/Serachbar";
 import ImageGallery from "./Components/ImageGallery/ImageGallery";
 import Button from "./Components/Button/Button";
@@ -23,10 +24,7 @@ class App extends Component {
 
   fetchCards = () => {
     this.setState({ status: "pending" });
-    fetch(
-      `https://pixabay.com/api/?image_type=photo&orientation=horizontal&q=${this.state.searchQuery}&page=${this.state.page}&per_page=12&key=23035178-c9501c24659a46c37914a5a12`
-    )
-      .then((r) => r.json())
+    fetchImages(this.state.searchQuery, this.state.page)
       .then((r) => {
         this.setState((prevState) => ({
           cards: [...prevState.cards, ...r.hits],
