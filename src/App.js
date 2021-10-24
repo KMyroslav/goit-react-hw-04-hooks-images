@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import fetchImages from "./Services/fetchImages";
 import Searchbar from "./Components/Searchbar/Serachbar";
 import ImageGallery from "./Components/ImageGallery/ImageGallery";
@@ -6,31 +6,29 @@ import Button from "./Components/Button/Button";
 import Loader from "react-loader-spinner";
 import Modal from "./Components/Modal/modal";
 
-class App extends Component {
-  state = {
-    cards: [],
-    searchQuery: "",
-    page: 1,
-    status: "idle",
-    showModal: false,
-    bigPicture: null,
-  };
+function App() {
+  const [cards, setCards] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("idle");
+  const [showModal, setShowModal] = useState(false);
+  const [bigPicture, setBigPicture] = useState(null);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.searchQuery !== this.state.searchQuery) {
-      this.fetchCards();
+  useEffect(() => {
+    if (!searchQuery) {
+      return;
     }
-  }
+    fetchCards();
+    // eslint-disable-next-line
+  }, [searchQuery]);
 
-  fetchCards = () => {
-    this.setState({ status: "pending" });
-    fetchImages(this.state.searchQuery, this.state.page)
+  const fetchCards = () => {
+    setStatus("pending");
+    fetchImages(searchQuery, page)
       .then((r) => {
-        this.setState((prevState) => ({
-          cards: [...prevState.cards, ...r.hits],
-          page: this.state.page + 1,
-          status: "resolved",
-        }));
+        setCards((prevState) => [...prevState, ...r.hits]);
+        setPage((prevState) => prevState + 1);
+        setStatus("resolved");
         window.scrollTo({
           top: document.documentElement.scrollHeight,
           behavior: "smooth",
@@ -39,48 +37,37 @@ class App extends Component {
       .catch((error) => console.log(error));
   };
 
-  onQueryUpdate = (searchQuery) => {
-    this.setState({
-      cards: [],
-      searchQuery: searchQuery,
-      page: 1,
-      status: "idle",
-    });
+  const onQueryUpdate = (searchQuery) => {
+    setCards([]);
+    setSearchQuery(searchQuery);
+    setPage(1);
+    setStatus("idle");
   };
 
-  toggleModal = (picture) => {
-    this.setState({ showModal: !this.state.showModal, bigPicture: picture });
+  const toggleModal = (picture) => {
+    setShowModal((prevState) => !prevState);
+    setBigPicture(picture);
   };
 
-  render() {
-    const { cards, searchQuery, page, status, showModal, bigPicture } =
-      this.state;
-    return (
-      <div className="App">
-        <Searchbar onQueryUpdate={this.onQueryUpdate} />
-        <ImageGallery cards={cards} toggleModal={this.toggleModal} />
-        {status === "pending" && (
-          <Loader
-            type="Puff"
-            color="#00BFFF"
-            height={100}
-            width={100}
-            timeout={3000}
-          />
-        )}
-        {status === "resolved" && (
-          <Button
-            searchQuery={searchQuery}
-            page={page}
-            fetchCards={this.fetchCards}
-          />
-        )}
-        {showModal && (
-          <Modal toggleModal={this.toggleModal} bigPicture={bigPicture} />
-        )}
-      </div>
-    );
-  }
+  return (
+    <div className="App">
+      <Searchbar onQueryUpdate={onQueryUpdate} />
+      <ImageGallery cards={cards} toggleModal={toggleModal} />
+      {status === "pending" && (
+        <Loader
+          type="Puff"
+          color="#00BFFF"
+          height={100}
+          width={100}
+          timeout={3000}
+        />
+      )}
+      {status === "resolved" && (
+        <Button searchQuery={searchQuery} page={page} fetchCards={fetchCards} />
+      )}
+      {showModal && <Modal toggleModal={toggleModal} bigPicture={bigPicture} />}
+    </div>
+  );
 }
 
 export default App;
